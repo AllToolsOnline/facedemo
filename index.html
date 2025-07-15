@@ -18,13 +18,13 @@
   </style>
 </head>
 <body>
-  <h2 style="text-align:center;">😎 Face Filter App (Snapchat Style)</h2>
+  <h2 style="text-align:center;">😎 Face Filter App</h2>
   <div id="wrapper">
     <video id="video" width="640" height="480" autoplay muted></video>
     <canvas id="overlay" width="640" height="480"></canvas>
   </div>
 
-  <!-- Face API scripts -->
+  <!-- Face API script -->
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 
   <script>
@@ -33,13 +33,16 @@
     const context = canvas.getContext('2d');
 
     async function setupCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-      video.srcObject = stream;
-      return new Promise((resolve) => {
-        video.onloadedmetadata = () => {
-          resolve(video);
-        };
-      });
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        return new Promise((resolve) => {
+          video.onloadedmetadata = () => resolve();
+        });
+      } catch (err) {
+        alert("😢 Camera access denied or unavailable.");
+        console.error(err);
+      }
     }
 
     async function loadModels() {
@@ -53,28 +56,26 @@
       const rightEye = landmarks.getRightEye();
 
       const eyeWidth = rightEye[3].x - leftEye[0].x;
-      const eyeHeight = 30;
-
       const x = leftEye[0].x;
-      const y = leftEye[0].y - 15;
+      const y = leftEye[0].y - 20;
 
       context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      context.fillRect(x, y, eyeWidth + 10, eyeHeight);
+      context.fillRect(x, y, eyeWidth + 20, 30);
 
-      // Add white dots as “shine” for fun
       context.fillStyle = '#fff';
       context.beginPath();
       context.arc(x + 10, y + 10, 4, 0, Math.PI * 2);
       context.fill();
     }
 
-    async function startFaceFilter() {
+    async function startApp() {
       await loadModels();
       await setupCamera();
 
       setInterval(async () => {
-        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                                        .withFaceLandmarks();
+        const detections = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks();
 
         context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -84,7 +85,7 @@
       }, 100);
     }
 
-    startFaceFilter();
+    startApp();
   </script>
 </body>
 </html>
